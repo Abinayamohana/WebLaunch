@@ -418,16 +418,24 @@ jobs:
               \"buildNumber\": \"$RESOLVED_CODE\"
             }"
 
-      # ── 15. Callback to BuildPortal — FAILURE ────────────────────────────
-      - name: Notify BuildPortal (failure)
-        if: failure()
+      # ── 15. Callback to BuildPortal — FAILURE or CANCEL ──────────────────
+      - name: Notify BuildPortal (failure or cancel)
+        if: cancelled() || failure()
         run: |
+          STATUS="failed"
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            STATUS="cancelled"
+            ERROR_MSG="GitHub Actions build was cancelled."
+          else
+            ERROR_MSG="GitHub Actions build failed. Check the workflow logs for details."
+          fi
+
           curl -s -X POST "${{ inputs.callback_url }}" \
             -H "Content-Type: application/json" \
             -H "ngrok-skip-browser-warning: true" \
             -d "{
-              \"secret\": \"${{ secrets.callback_secret }}\",
+              \"secret\": \"${{ inputs.callback_secret }}\",
               \"buildId\": \"${{ inputs.build_id }}\",
-              \"status\": \"failed\",
-              \"error\": \"GitHub Actions build failed. Check the workflow logs for details.\"
+              \"status\": \"$STATUS\",
+              \"error\": \"$ERROR_MSG\"
             }"
