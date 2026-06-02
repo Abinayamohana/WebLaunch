@@ -85,6 +85,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ── 0. Register Workflow Run ID ──────────────────────────────────────
+      - name: Register Workflow Run ID
+        run: |
+          curl -s -X POST "${{ inputs.callback_url }}/run-id" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"secret\": \"${{ inputs.callback_secret }}\",
+              \"buildId\": \"${{ inputs.build_id }}\",
+              \"runId\": \"${{ github.run_id }}\"
+            }"
+
       # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
